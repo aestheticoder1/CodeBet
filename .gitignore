@@ -1,0 +1,19 @@
+# === Global ===
+node_modules/
+.env
+.DS_Store
+.vscode/
+.idea/
+*.log
+logs/
+
+# === Backend ===
+backend/node_modules/
+backend/.env
+backend/uploads/
+
+# === Frontend ===
+frontend/node_modules/
+frontend/.env
+frontend/dist/
+frontend/.next/
