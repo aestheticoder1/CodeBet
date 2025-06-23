@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import { useDispatch, useSelector } from 'react-redux';
@@ -9,11 +9,23 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Footer from './components/Footer.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import { ToastContainer } from 'react-toastify';
+import { io } from 'socket.io-client';
+import ContestPage from './pages/ContestPage.jsx';
 // import { useState } from 'react';
 
 const App = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.user);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = io("http://localhost:5000");
+    setSocket(newSocket);
+    return () => newSocket.disconnect();
+  }, []);
   // const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,9 +57,22 @@ const App = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+
+          {/* Protected Route */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard socket={socket} />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/contest/:id" element={<ContestPage />} />
+
         </Routes>
         <Footer />
       </Router>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

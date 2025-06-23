@@ -24,6 +24,11 @@ router.post('/send', verifyToken, async (req, res) => {
         });
 
         await newChallenge.save();
+
+        // io.to(req.user._id.toString()).emit("challenge-sent", {
+        //     challengeId: newChallenge._id,
+        // });
+
         res.status(201).json({ message: "Challenge sent", challenge: newChallenge });
     } catch (err) {
         res.status(500).json({ error: "Failed to send challenge" });

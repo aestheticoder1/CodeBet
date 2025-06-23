@@ -22,11 +22,13 @@ export default function Navbar() {
                 {/* Right: Avatar always visible if logged in */}
                 <div className="flex items-center space-x-4">
                     {user ? (
-                        <img
-                            src={user.profilePic || "https://ui-avatars.com/api/?name=User"}
-                            alt="Profile"
-                            className="w-9 h-9 rounded-full border-2 border-black"
-                        />
+                        <Link to={"/dashboard"}>
+                            <img
+                                src={user.profilePic || "https://ui-avatars.com/api/?name=User"}
+                                alt="Profile"
+                                className="w-9 h-9 rounded-full border-2 border-black"
+                            />
+                        </Link>
                     ) : (
                         <>
                             {/* Auth Buttons: Show only on sm and above */}

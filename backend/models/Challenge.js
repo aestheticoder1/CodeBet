@@ -19,7 +19,7 @@ const challengeSchema = new mongoose.Schema({
     tag: {
         type: String,
         enum: [
-            "binary search", "bitmasks", "brute force",
+            "all", "binary search", "bitmasks", "brute force",
             "combinatorics", "constructive algorithms",
             "dfs and similar", "divide and conquer", "dp", "dsu", "games", "geometry",
             "graphs", "greedy", "hashing", "implementation",
