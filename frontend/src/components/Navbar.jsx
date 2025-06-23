@@ -1,16 +1,23 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
-export default function Navbar({ user }) {
+export default function Navbar() {
+    // const dispatch = useDispatch();
+    const user = useSelector((state) => state.user.user);
+    // console.log("User in Navbar:", user);
     const [isOpen, setIsOpen] = useState(false);
 
     return (
         <nav className="sticky top-0 z-50 bg-card px-4 sm:px-6 py-4 border-b border-gray-700 shadow-md">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
                 {/* Left: Logo */}
-                <div className="text-3xl font-bold tracking-wide">
-                    Code<span className="text-primary">Bet</span>
-                </div>
+                <Link to={"/"}>
+                    <div className="text-3xl font-bold tracking-wide">
+                        Code<span className="text-primary">Bet</span>
+                    </div>
+                </Link>
 
                 {/* Right: Avatar always visible if logged in */}
                 <div className="flex items-center space-x-4">
@@ -24,18 +31,18 @@ export default function Navbar({ user }) {
                         <>
                             {/* Auth Buttons: Show only on sm and above */}
                             <div className="hidden sm:flex items-center space-x-4">
-                                <a
-                                    href="/login"
+                                <Link
+                                    to={"/login"}
                                     className="hover:text-secondary font-medium border px-3 py-1.5 font-semibold transition hover:border-secondary rounded"
                                 >
                                     Login
-                                </a>
-                                <a
-                                    href="/signup"
+                                </Link>
+                                <Link
+                                    to={"/signup"}
                                     className="bg-secondary text-gray-900 px-4 py-1.5 rounded font-semibold hover:bg-white transition"
                                 >
                                     Sign Up
-                                </a>
+                                </Link>
                             </div>
 
                             {/* Hamburger (only for guests) */}
@@ -59,18 +66,18 @@ export default function Navbar({ user }) {
                         }`}
                 >
                     <div className="mt-3 px-4 flex flex-col items-center space-y-2">
-                        <a
-                            href="/login"
+                        <Link
+                            to={"/login"}
                             className="hover:text-secondary font-medium border px-3 py-1.5 font-semibold transition hover:border-secondary rounded"
                         >
                             Login
-                        </a>
-                        <a
-                            href="/signup"
+                        </Link>
+                        <Link
+                            to={"/signup"}
                             className="bg-secondary text-gray-900 px-4 py-1.5 rounded font-semibold hover:bg-white transition"
                         >
                             Sign Up
-                        </a>
+                        </Link>
                     </div>
                 </div>
             )}

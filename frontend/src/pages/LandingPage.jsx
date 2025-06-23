@@ -12,7 +12,6 @@ const LandingPage = () => {
         <FeatureSection/>
         <Quotes/>
         <Testimonials/>
-        <Footer/>
     </div>
   )
 }
