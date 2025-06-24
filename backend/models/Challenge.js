@@ -45,11 +45,19 @@ const challengeSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ['pending','rejected' , 'ongoing', 'completed'],
+        enum: ['pending', 'rejected', 'ongoing', 'completed'],
         default: 'pending',
+    },
+    startTime: {
+        type: Date, // Date.now() in milliseconds
+        default: null, // Will be set when the challenge starts
     },
 
     winner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    draw: {
+        type: Boolean,
+        default: false
+    },
 }, { timestamps: true });
 
 export default mongoose.model('Challenge', challengeSchema);

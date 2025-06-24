@@ -67,8 +67,14 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/contest/:id" element={<ContestPage />} />
-
+          <Route
+            path="/challenge/:id"
+            element={
+              <ProtectedRoute>
+                <ContestPage socket={socket} />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
         <Footer />
       </Router>
