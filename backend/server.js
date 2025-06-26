@@ -7,7 +7,6 @@ import connectDB from "./config/database.js";
 import challengeRoutes from "./routes/challenge.js";
 import authRoutes from "./routes/auth.js";
 import Challenge from "./models/Challenge.js";
-import { send } from "process";
 import { initSocket } from "./socket.js"; // path as needed
 
 
