@@ -1,11 +1,25 @@
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+
 export default function Hero() {
+    const navigate = useNavigate();
+    const user = useSelector((state) => state.user.user);
+
+    const handleChallengeNow = () => {
+        if (user) {
+            navigate("/dashboard");
+        } else {
+            navigate("/signup");
+        }
+    };
+
     return (
         <section className="bg-backgroundDark text-white py-12 px-6">
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-10">
                 {/* Left: Image */}
                 <div className="sm:w-1/2 w-full">
                     <img
-                        src="/hero1.png" // Ensure this is placed in /public folder
+                        src="/hero1.png"
                         alt="Code battle visual"
                         className="w-full h-auto rounded-xl shadow-lg"
                     />
@@ -22,12 +36,12 @@ export default function Hero() {
                         It’s not just about solving problems — it’s about solving them faster.
                         Challenge your peers, race against the clock, and prove your coding instincts under pressure.
                     </p>
-                    <a
-                        href="/login"
+                    <button
+                        onClick={handleChallengeNow}
                         className="inline-block bg-primary text-gray-900 text-xl font-bold px-6 py-3 rounded hover:bg-secondary transition"
                     >
                         Challenge Now
-                    </a>
+                    </button>
                 </div>
             </div>
         </section>
