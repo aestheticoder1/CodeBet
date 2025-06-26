@@ -26,6 +26,21 @@ const Dashboard = ({ socket }) => {
     }, [user, socket]);
 
     useEffect(() => {
+        const refreshUserStats = async () => {
+            try {
+                const res = await axios.get("/auth/profile", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                dispatch(setUser(res.data));
+            } catch (err) {
+                console.error("❌ Could not refresh user stats", err);
+            }
+        };
+
+        refreshUserStats(); // Call only once when dashboard loads
+    }, []);
+
+    useEffect(() => {
         if (!socket) return;
         const handleNewChallenge = (data) => {
             setReceivedChallenges((prev) => [data, ...prev]);

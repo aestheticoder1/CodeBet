@@ -50,6 +50,8 @@ router.post('/login', async (req, res) => {
                 email: user.email,
                 cfUsername: user.cfUsername,
                 profilePic: user.profilePic,
+                matchesPlayed: user.matchesPlayed,
+                wins: user.wins,
             },
         });
     } catch (err) {
