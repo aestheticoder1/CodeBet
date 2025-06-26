@@ -1,40 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from '../api/axios.js';
 import { useNavigate } from 'react-router-dom';
 import SendChallengeModal from '../components/SendChallengeModal.jsx';
 import { toast } from 'react-toastify';
+import { setUser } from '../redux/userSlice.js';
 
 const Dashboard = ({ socket }) => {
     const user = useSelector((state) => state.user.user);
     const [receivedChallenges, setReceivedChallenges] = useState([]);
     const [ongoingChallenges, setOngoingChallenges] = useState([]);
-    const [activeTab, setActiveTab] = useState("received"); // "received" | "ongoing"
+    const [activeTab, setActiveTab] = useState("received");
     const [modalOpen, setModalOpen] = useState(false);
+    const [acceptingId, setAcceptingId] = useState(null);
+    const [rejectingId, setRejectingId] = useState(null);
+
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
+    const dispatch = useDispatch();
 
-    // Register user in personal room
     useEffect(() => {
         if (user?._id && socket) {
             socket.emit("registerUser", user._id);
         }
     }, [user, socket]);
 
-    // Listen for new challenge in real-time
     useEffect(() => {
         if (!socket) return;
-
         const handleNewChallenge = (data) => {
             setReceivedChallenges((prev) => [data, ...prev]);
             toast.info("📨 New challenge received!");
         };
-
         socket.on("newChallenge", handleNewChallenge);
         return () => socket.off("newChallenge", handleNewChallenge);
     }, [socket]);
 
-    // Fetch received challenges
     useEffect(() => {
         const fetchReceived = async () => {
             try {
@@ -49,7 +49,6 @@ const Dashboard = ({ socket }) => {
         if (activeTab === "received" && token) fetchReceived();
     }, [token, activeTab]);
 
-    // Fetch ongoing challenges
     useEffect(() => {
         const fetchOngoing = async () => {
             try {
@@ -65,8 +64,8 @@ const Dashboard = ({ socket }) => {
     }, [token, activeTab]);
 
     const handleAccept = async (challenge) => {
+        setAcceptingId(challenge._id);
         try {
-            // ✅ Setup listener first
             const contestHandler = (data) => {
                 navigate(`/challenge/${data.challengeId}`);
             };
@@ -80,14 +79,15 @@ const Dashboard = ({ socket }) => {
             await axios.post(`/challenge/${challenge._id}/accept`, {}, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
-            // navigate(`/challenge/${challenge._id}`);
         } catch (err) {
             console.error("❌ Challenge accept error", err);
+        } finally {
+            setAcceptingId(null);
         }
     };
 
     const handleReject = async (challenge) => {
+        setRejectingId(challenge._id);
         try {
             await axios.post(`/challenge/${challenge._id}/reject`, {}, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -98,12 +98,14 @@ const Dashboard = ({ socket }) => {
             );
         } catch (err) {
             console.error("❌ Failed to reject challenge", err);
+        } finally {
+            setRejectingId(null);
         }
     };
 
     const handleRejoin = (challengeId) => {
         socket.emit("joinChallenge", {
-            challengeId, 
+            challengeId,
             userId: user._id,
         });
 
@@ -112,7 +114,6 @@ const Dashboard = ({ socket }) => {
 
     return (
         <div className="min-h-screen p-8 bg-background">
-            {/* Profile Section */}
             <div className="flex flex-col md:flex-row items-start bg-card rounded shadow p-6 mb-8">
                 <div className="w-full md:w-1/3 flex justify-center mb-4 md:mb-0">
                     {user?.profilePic ? (
@@ -131,7 +132,6 @@ const Dashboard = ({ socket }) => {
                     <p className="mb-1"><strong>Total Matches:</strong> {user?.matchesPlayed}</p>
                     <p className="mb-1"><strong>Total Wins:</strong> {user?.wins}</p>
 
-
                     <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-4">
                         <button
                             onClick={() => setModalOpen(true)}
@@ -141,9 +141,19 @@ const Dashboard = ({ socket }) => {
                         </button>
                         <button
                             onClick={() => navigate('/challenge/history')}
-                            className="hover:text-secondary font-medium border px-4 py-2 font-semibold transition hover:border-secondary rounded"
+                            className="hover:text-secondary border px-4 py-2 font-semibold transition hover:border-secondary rounded"
                         >
                             Past History
+                        </button>
+                        <button
+                            onClick={() => {
+                                localStorage.removeItem("token");
+                                dispatch(setUser(null));
+                                navigate("/login");
+                            }}
+                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                        >
+                            Logout
                         </button>
                     </div>
                 </div>
@@ -174,7 +184,7 @@ const Dashboard = ({ socket }) => {
                         ) : (
                             <ul className="space-y-4">
                                 {receivedChallenges.map((challenge) => (
-                                    <li key={challenge._id} className="border p-4 rounded flex flex-col md:flex-row justify-between items-start md:items-center">
+                                    <li key={challenge._id} className="border border-gray-700 shadow-sm transition-all hover:shadow-white bg-background p-4 rounded flex flex-col md:flex-row justify-between items-start md:items-center">
                                         <div>
                                             <p><strong>From:</strong> {challenge.sender.username}</p>
                                             <p><strong>Rating:</strong> {challenge.rating}</p>
@@ -182,11 +192,19 @@ const Dashboard = ({ socket }) => {
                                             <p><strong>Time Limit:</strong> {challenge.timeLimit} minutes</p>
                                         </div>
                                         <div className="mt-4 md:mt-0 flex gap-3">
-                                            <button className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700" onClick={() => handleAccept(challenge)}>
-                                                Accept
+                                            <button
+                                                className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                                                disabled={acceptingId === challenge._id}
+                                                onClick={() => handleAccept(challenge)}
+                                            >
+                                                {acceptingId === challenge._id ? "Accepting..." : "Accept"}
                                             </button>
-                                            <button className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700" onClick={() => handleReject(challenge)}>
-                                                Reject
+                                            <button
+                                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                                                disabled={rejectingId === challenge._id}
+                                                onClick={() => handleReject(challenge)}
+                                            >
+                                                {rejectingId === challenge._id ? "Rejecting..." : "Reject"}
                                             </button>
                                         </div>
                                     </li>
@@ -201,7 +219,7 @@ const Dashboard = ({ socket }) => {
                         ) : (
                             <ul className="space-y-4">
                                 {ongoingChallenges.map((challenge) => (
-                                    <li key={challenge._id} className="border p-4 rounded flex flex-col md:flex-row justify-between items-start md:items-center">
+                                    <li key={challenge._id} className="border border-gray-700 shadow-sm transition-all hover:shadow-white bg-background p-4 rounded flex flex-col md:flex-row justify-between items-start md:items-center">
                                         <div>
                                             <p><strong>Opponent:</strong> {
                                                 user._id === challenge.sender._id ? challenge.receiver.username : challenge.sender.username
@@ -221,7 +239,6 @@ const Dashboard = ({ socket }) => {
                         )}
                     </div>
                 )}
-
             </div>
 
             {/* Modal */}

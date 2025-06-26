@@ -15,17 +15,17 @@ export const initSocket = async (server) => {
 
         socket.on("joinChallenge", ({ challengeId, userId }) => {
             socket.join(challengeId);
-            console.log(`📥 User ${userId} joined room ${challengeId}`);
+            // console.log(`📥 User ${userId} joined room ${challengeId}`);
         });
 
         socket.on("registerUser", (userId) => {
             socket.join(userId); // user joins their personal room
-            console.log(`✅ User ${userId} joined their personal room`);
+            // console.log(`✅ User ${userId} joined their personal room`);
         });
 
         socket.on("submitResult", ({ challengeId, winnerId, isDraw }) => {
             ioInstance.to(challengeId).emit("contestEnded", { winnerId, isDraw });
-            console.log(`🏁 Contest ended for ${challengeId}, winner: ${winnerId}, draw: ${isDraw}`);
+            // console.log(`🏁 Contest ended for ${challengeId}, winner: ${winnerId}, draw: ${isDraw}`);
         });
 
 

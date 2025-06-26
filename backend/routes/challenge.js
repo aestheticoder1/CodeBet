@@ -42,7 +42,7 @@ router.post('/send', verifyToken, async (req, res) => {
             createdAt: savedChallenge.createdAt,
         });
 
-        console.log("nihal");
+        // console.log("nihal");
 
         res.status(201).json({ message: "Challenge sent", challenge: savedChallenge });
 
@@ -139,7 +139,7 @@ router.post('/:id/accept', verifyToken, async (req, res) => {
             problem: challenge.problem
         });
 
-        console.log("🚀 Emitted startContest for", challenge._id.toString());
+        // console.log("🚀 Emitted startContest for", challenge._id.toString());
 
         res.status(200).json({ message: "Challenge accepted", challenge });
     } catch (err) {
@@ -188,7 +188,10 @@ router.get('/:id', verifyToken, async (req, res) => {
     try {
         const challenge = await Challenge.findById(req.params.id)
             .populate("sender", "username _id")
-            .populate("receiver", "username _id");
+            .populate("receiver", "username _id")
+            .exec();
+
+        // console.log("Fetching challenge:", challenge);
 
         if (!challenge) {
             return res.status(404).json({ error: "Challenge not found" });
@@ -211,39 +214,43 @@ router.get('/:id', verifyToken, async (req, res) => {
 });
 
 // POST /api/challenge/:id/submit-result
+// POST /api/challenge/:id/submit-result
 router.post('/:id/submit-result', verifyToken, async (req, res) => {
     const { winnerId, isDraw } = req.body;
 
     try {
-        const challenge = await Challenge.findById(req.params.id);
-        console.log(challenge);
-        if (!challenge || challenge.status !== "ongoing") {
-            return res.status(400).json({ error: "Invalid or already completed challenge" });
+        // ✅ Atomically update only if status is still "ongoing"
+        const challenge = await Challenge.findOneAndUpdate(
+            { _id: req.params.id, status: "ongoing" },
+            {
+                status: "completed",
+                winner: isDraw ? null : winnerId,
+                draw: isDraw
+            },
+            { new: true }
+        );
+
+        if (!challenge) {
+            return res.status(400).json({ error: "Challenge already completed or not found" });
         }
 
-        challenge.status = "completed";
-        if (isDraw) {
-            challenge.draw = true;
-        } else {
-            challenge.winner = winnerId;
-        }
-        await challenge.save();
-
-        // Update both users’ matchCount
-        await User.findByIdAndUpdate(challenge.sender, { $inc: { matchesPlayed: 1 } });
-        await User.findByIdAndUpdate(challenge.receiver, { $inc: { matchesPlayed: 1 } });
-
-        // Update winner’s winCount
-        if (!isDraw) {
-            await User.findByIdAndUpdate(winnerId, { $inc: { wins: 1 } });
-        }
+        // ✅ Update match count for both players
+        await Promise.all([
+            User.findByIdAndUpdate(challenge.sender, { $inc: { matchesPlayed: 1 } }),
+            User.findByIdAndUpdate(challenge.receiver, { $inc: { matchesPlayed: 1 } }),
+            !isDraw && winnerId
+                ? User.findByIdAndUpdate(winnerId, { $inc: { wins: 1 } })
+                : Promise.resolve()
+        ]);
 
         res.status(200).json({ message: "Result processed" });
+
     } catch (err) {
         console.error("Result processing error:", err);
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
 
 
 export default router;

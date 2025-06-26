@@ -86,11 +86,15 @@ const SendChallengeModal = ({ isOpen, onClose, socket }) => {
         }
     };
 
+    const handleCross = () => {
+        setStatusMessage("");
+        onClose();
+    }
     return (
         <div className="fixed inset-0 bg-background bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-background p-6 rounded shadow-md w-full max-w-md relative">
                 <button
-                    onClick={onClose}
+                    onClick={handleCross}
                     className="absolute top-2 right-3 text-gray-600 hover:text-black"
                 >
                     ✕
