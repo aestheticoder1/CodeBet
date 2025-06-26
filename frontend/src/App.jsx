@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import { ToastContainer } from 'react-toastify';
 import { io } from 'socket.io-client';
 import ContestPage from './pages/ContestPage.jsx';
+import PastHistory from './pages/PastHistory.jsx';
 // import { useState } from 'react';
 
 const App = () => {
@@ -72,6 +73,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <ContestPage socket={socket} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/past-history"
+            element={
+              <ProtectedRoute>
+                <PastHistory/>
               </ProtectedRoute>
             }
           />

@@ -219,38 +219,81 @@ router.post('/:id/submit-result', verifyToken, async (req, res) => {
     const { winnerId, isDraw } = req.body;
 
     try {
-        // ✅ Atomically update only if status is still "ongoing"
-        const challenge = await Challenge.findOneAndUpdate(
-            { _id: req.params.id, status: "ongoing" },
-            {
-                status: "completed",
-                winner: isDraw ? null : winnerId,
-                draw: isDraw
-            },
-            { new: true }
-        );
+        const challenge = await Challenge.findById(req.params.id)
+            .populate('sender', 'cfUsername')
+            .populate('receiver', 'cfUsername');
 
         if (!challenge) {
-            return res.status(400).json({ error: "Challenge already completed or not found" });
+            return res.status(404).json({ error: "Challenge not found" });
         }
 
-        // ✅ Update match count for both players
+        if (challenge.status === "completed") {
+            // Already completed — check if new winner has earlier AC
+            if (isDraw || !winnerId || challenge.draw) {
+                return res.status(200).json({ message: "Challenge already completed" });
+            }
+
+            if (String(winnerId) === String(challenge.winner)) {
+                return res.status(200).json({ message: "Same winner already stored" });
+            }
+
+            const getSubmissionTime = async (cfUsername) => {
+                const res = await fetch(`https://codeforces.com/api/user.status?handle=${cfUsername}&from=1&count=10`);
+                const data = await res.json();
+                if (data.status !== "OK") return Infinity;
+
+                const sub = data.result.find(
+                    (s) =>
+                        s.verdict === "OK" &&
+                        s.problem.contestId === challenge.problem.contestId &&
+                        s.problem.index === challenge.problem.index &&
+                        s.creationTimeSeconds * 1000 >= new Date(challenge.startTime).getTime()
+                );
+
+                return sub ? sub.creationTimeSeconds : Infinity;
+            };
+
+            const currentWinnerUser = (String(challenge.winner) === String(challenge.sender._id)) ? challenge.sender : challenge.receiver;
+            const newWinnerUser = (String(winnerId) === String(challenge.sender._id)) ? challenge.sender : challenge.receiver;
+
+            const currentTime = await getSubmissionTime(currentWinnerUser.cfUsername);
+            const newTime = await getSubmissionTime(newWinnerUser.cfUsername);
+
+            if (newTime < currentTime) {
+                challenge.winner = winnerId;
+                challenge.draw = false;
+                await challenge.save();
+
+                await Promise.all([
+                    User.findByIdAndUpdate(winnerId, { $inc: { wins: 1 } }),
+                    User.findByIdAndUpdate(challenge.winner, { $inc: { wins: -1 } }),
+                ]);
+
+                return res.status(200).json({ message: "Winner updated to earlier submission" });
+            }
+
+            return res.status(200).json({ message: "Winner remains unchanged" });
+        }
+
+        // ✅ First time result submission
+        challenge.status = "completed";
+        challenge.winner = isDraw ? null : winnerId;
+        challenge.draw = isDraw;
+        await challenge.save();
+
+        // Update stats
         await Promise.all([
-            User.findByIdAndUpdate(challenge.sender, { $inc: { matchesPlayed: 1 } }),
-            User.findByIdAndUpdate(challenge.receiver, { $inc: { matchesPlayed: 1 } }),
-            !isDraw && winnerId
-                ? User.findByIdAndUpdate(winnerId, { $inc: { wins: 1 } })
-                : Promise.resolve()
+            User.findByIdAndUpdate(challenge.sender._id, { $inc: { matchesPlayed: 1 } }),
+            User.findByIdAndUpdate(challenge.receiver._id, { $inc: { matchesPlayed: 1 } }),
+            !isDraw && winnerId ? User.findByIdAndUpdate(winnerId, { $inc: { wins: 1 } }) : Promise.resolve()
         ]);
 
-        res.status(200).json({ message: "Result processed" });
-
+        res.status(200).json({ message: "Result recorded successfully" });
     } catch (err) {
         console.error("Result processing error:", err);
         res.status(500).json({ error: "Internal server error" });
     }
 });
-
 
 
 export default router;

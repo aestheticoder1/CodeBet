@@ -140,7 +140,7 @@ const Dashboard = ({ socket }) => {
                             Send Challenge
                         </button>
                         <button
-                            onClick={() => navigate('/challenge/history')}
+                            onClick={() => navigate('/past-history')}
                             className="hover:text-secondary border px-4 py-2 font-semibold transition hover:border-secondary rounded"
                         >
                             Past History
